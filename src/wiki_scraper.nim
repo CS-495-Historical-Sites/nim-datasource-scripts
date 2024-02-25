@@ -43,7 +43,7 @@ when isMainModule:
     let locationsToQuery = parseJson(queryText)
 
     var ids: seq[string] = @[]
-    let begin = 40000
+    let begin = 60000
     let pull = 10000
     var counter = 0
     for previousQueryResult in locationsToQuery:

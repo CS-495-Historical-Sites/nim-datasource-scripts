@@ -15,8 +15,12 @@ type
     wikipedia_link*: Option[string]
     wikidata_image_name*: string
 
-proc getName(node: WikidataItemResponse): string =
-  return node["labels"]["en"].getStr
+proc getName(node: WikidataItemResponse): Option[string] =
+  let labels = node["labels"]
+  if not labels.contains("en"):
+    return none(string)
+
+  return labels["en"].getStr.some
 
 
 
@@ -59,6 +63,8 @@ proc getImageName(node: WikidataItemResponse): Option[string] =
 
 proc toLocation*(node: WikidataItemResponse): Option[Location] =
   let name = node.getName
+  if name.isNone:
+    return none(Location)
   let shortDesc = node.getShortDescription
   let wikipediaPage = node.getWikipediaPage
   let coordinates = node.getCoordinates
@@ -70,7 +76,7 @@ proc toLocation*(node: WikidataItemResponse): Option[Location] =
     return none(Location)
 
   return some(Location(
-    name: name,
+    name: name.get,
     short_description: shortDesc,
     long_description: some(""),
     coordinates: coordinates.get,
