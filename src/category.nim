@@ -12,7 +12,7 @@ type
      PACIFIC_ISLANDER, HISPANIC, INVENTION
 
 
-  Category = object
+  Category* = object
     case kind*: CategoryKind
     of HISTORIC:
       historicValue: string
@@ -24,7 +24,6 @@ type
       discard
 
 proc toCatKind(s: string): CategoryKind =
-  echo s
   case s
   of "ARCHITECTURE": return ARCHITECTURE
   of "ENTERTAINMENT/RECREATION": return ENTERTAINMENT_RECREATION
