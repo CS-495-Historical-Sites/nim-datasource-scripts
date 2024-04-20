@@ -1,5 +1,6 @@
 import std/[json, options]
 
+import category
 import wikidata
 
 type
@@ -7,13 +8,15 @@ type
     latitude: float
     longtitude: float
 
-  Location* = object
+  Location* = ref object
     name*: string
     short_description*: Option[string]
     long_description*: Option[string]
     coordinates*: LatLong
     wikipedia_link*: Option[string]
     wikidata_image_name*: string
+    nhrp_reference_number*: string
+    assosiated_categories*: seq[Category] 
 
 proc getName(node: WikidataItemResponse): Option[string] =
   let labels = node["labels"]
@@ -61,6 +64,18 @@ proc getImageName(node: WikidataItemResponse): Option[string] =
   let image = statements["P18"][0]["value"]["content"].getStr
   return some(image)
 
+
+proc getNHRPReferenceNumber(node: WikidataItemResponse): Option[string] =
+  let statements = node["statements"]
+  if not statements.contains("P649"):
+    return none(string)
+  let nhrp = statements["P649"][0]["value"]["content"].getStr
+
+  if nhrp.len == 0:
+    return none(string)
+
+  return some(nhrp)
+
 proc toLocation*(node: WikidataItemResponse): Option[Location] =
   let name = node.getName
   if name.isNone:
@@ -68,11 +83,15 @@ proc toLocation*(node: WikidataItemResponse): Option[Location] =
   let shortDesc = node.getShortDescription
   let wikipediaPage = node.getWikipediaPage
   let coordinates = node.getCoordinates
+  let reference_number = node.getNHRPReferenceNumber
   if coordinates.isNone:
     return none(Location)
 
   let imageName = node.getImageName
   if imageName.isNone:
+    return none(Location)
+  
+  if reference_number.isNone:
     return none(Location)
 
   return some(Location(
@@ -81,8 +100,10 @@ proc toLocation*(node: WikidataItemResponse): Option[Location] =
     long_description: some(""),
     coordinates: coordinates.get,
     wikipedia_link: wikipediaPage,
-    wikidata_image_name: imageName.get
-  ))
+    wikidata_image_name: imageName.get,
+    nhrp_reference_number: reference_number.get,
+    assosiated_categories: @[]))
+  
 
 
 

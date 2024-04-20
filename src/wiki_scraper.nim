@@ -1,8 +1,10 @@
-import std/[json, options, strutils, httpclient]
+import std/[json, options, strutils, httpclient, tables]
 
 import location
 import wikidata
 import wikipedia
+import nrhp
+import category
 
 
 proc fetchWikidataInfo(client: WikidataHttpClient,
@@ -41,10 +43,11 @@ when isMainModule:
     let queryText = readFile("query.json")
 
     let locationsToQuery = parseJson(queryText)
+    let categoryTable: Table[string, seq[category.Category]] = buildCategoryTable()
 
     var ids: seq[string] = @[]
-    let begin = 60000
-    let pull = 10000
+    let begin = 0
+    let pull = 1000
     var counter = 0
     for previousQueryResult in locationsToQuery:
         counter += 1
@@ -57,7 +60,10 @@ when isMainModule:
         if ids.len >= pull:
             break
 
-    let locations = fetchWikidataInfo(accessToken, ids)
+    var locations = fetchWikidataInfo(accessToken, ids)
+    for location in locations:
+        let categories = categoryTable.getOrDefault(location.nhrp_reference_number, @[])
+        location.assosiated_categories = categories
 
     let dump = %locations
     let fileName = "results:" & $begin & "-" & $(begin + pull) & ".json"
